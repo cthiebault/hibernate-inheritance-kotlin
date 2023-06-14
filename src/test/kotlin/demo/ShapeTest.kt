@@ -43,34 +43,29 @@ class ShapeTest {
 
     logger.info("rectangle: $rectangle")
 
-    persist(rectangle)
-    clearThePersistenceContext()
+    entityManager.transaction.begin()
+    entityManager.persist(rectangle)
+    entityManager.transaction.commit()
 
-    val shapes = findAllShapes()
+    entityManager.clear()
+
+    val found = entityManager.find(Shape::class.java, rectangle.id)
+    assertEquals(rectangle, found)
+
+    val shapes = entityManager
+      .createQuery("SELECT shape FROM Shape shape", Shape::class.java)
+      .resultList
     logger.info("shapes: $shapes")
 
     assertEquals(1, shapes.size)
-
-    val firstShape = shapes.first()
-    assertEquals(rectangle.id, firstShape.id)
-    assertEquals(rectangle.name, firstShape.name)
-    assertEquals(rectangle.color, firstShape.color)
-    assertEquals(rectangle.properties, firstShape.properties)
+    assertEquals(rectangle, shapes.first())
   }
 
-  private fun findAllShapes(): List<Shape> =
-    entityManager
-      .createQuery("SELECT shape FROM Shape shape", Shape::class.java)
-      .resultList
-
-  private fun persist(any: Any) {
-    entityManager.transaction.begin()
-    entityManager.persist(any)
-    entityManager.transaction.commit()
-  }
-
-  private fun clearThePersistenceContext() {
-    entityManager.clear()
+  private fun assertEquals(expected: Shape, actual: Shape) {
+    assertEquals(expected.id, actual.id)
+    assertEquals(expected.name, actual.name)
+    assertEquals(expected.color, actual.color)
+    assertEquals(expected.properties, actual.properties)
   }
 
 }
